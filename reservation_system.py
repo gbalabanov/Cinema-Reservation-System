@@ -11,7 +11,7 @@ def is_command(command_tuple, command_string):
 
 def show_movies_func():
     try:
-        output = cursor.execute("Select * from Movies")
+        output = cursor.execute("SELECT * FROM Movies ORDER BY rating DESC")
         for movie in output:
             num, name, rate = movie
             print("[{}] = {} ({})".format(num, name, rate))
