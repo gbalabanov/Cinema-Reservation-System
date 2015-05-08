@@ -6,13 +6,15 @@ cursor = conn.cursor()
 def parse_command(command):
     return tuple(command.split(" "))
 
+
 def is_command(command_tuple, command_string):
     return command_tuple[0] == command_string
+
 
 def verify_movie_id(arg):
     try:
         query = "Select id from movies"
-        ids=[]
+        ids = []
         for x in cursor.execute(query).fetchall():
             ids.append(x[0])
         return int(arg) in ids
@@ -20,25 +22,28 @@ def verify_movie_id(arg):
         print(e)
         return False
 
+
 def get_projections_by_id(command):
     try:
-        if len(command)<2:
+        if len(command) < 2:
             return ("No movie id !")
         movie_id = command[1]
-        query = "Select m.name, p.date, p.time \
-            From Movies as m JOIN projections as p ON m.id = p.movie_id \
-            where m.id = ?"
+        query = """select 100-count(r.id) as free_spaces, m.name, p.date, p.time
+                    from projections as p left join reservations as r
+                    on r.projection_id = p.id
+                    join movies as m on p.movie_id = m.id
+                    where m.id = ?
+                    group by(r.projection_id) """
         if not verify_movie_id(movie_id):
             return "No such movie !"
-        output = cursor.execute(query,(movie_id,)).fetchall()
-        for name, date, time in output:
-            print("{} = {}, {}".format(name, time, date))
+        output = cursor.execute(query, (movie_id,)).fetchall()
+        for x in output:
+            count, name, date, time = x
+            print("{} - {}, {}, {} free spaces".format(name, date, time, count))
         return True
     except Exception as e:
         print(e)
         return False
-
-
 
 
 def show_movies_func():
@@ -52,16 +57,17 @@ def show_movies_func():
         print(e)
         return False
 
+
 def show_movie_projections(args):
     return args[1]
 
 while True:
     command = parse_command(input("Enter command--> "))
 
-    if is_command(command,"show_movies"):
+    if is_command(command, "show_movies"):
         show_movies_func()
     if is_command(command, "smp"):
         print(get_projections_by_id(command))
-    if is_command(command,"exit"):
+    if is_command(command, "exit"):
         conn.close()
         break
