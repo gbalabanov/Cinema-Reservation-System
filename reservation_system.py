@@ -43,7 +43,7 @@ def get_projections_by_id(command):
 
 def show_movies_func():
     try:
-        output = cursor.execute("Select * from Movies order by rating desc")
+        output = cursor.execute("SELECT * FROM Movies ORDER BY rating DESC")
         for movie in output:
             num, name, rate = movie
             print("[{}] = {} ({})".format(num, name, rate))
