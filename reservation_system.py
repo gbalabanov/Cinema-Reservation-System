@@ -2,6 +2,28 @@ import sqlite3
 conn = sqlite3.connect("Cinema.db")
 cursor = conn.cursor()
 
+room_seats = [["." for x in range(10)] for y in range(10)]
+
+
+def print_room_seats(room):
+    for row in room:
+        print("".join(row))
+
+
+def make_reservation():
+    try:
+        name = input("Enter name-->")
+        number_tickets = int(input("Enter number of tickets-->"))
+        show_movies_func()
+        movie_id = input("Enter movie id--> ")
+        while not (movie_id == "cancel" or verify_movie_id(movie_id)):
+            movie_id = input("Enter correct id--> ")
+        get_projections_by_movie_id(movie_id)
+
+    except Exception as e:
+        print(e)
+        return False
+
 
 def parse_command(command):
     return tuple(command.split(" "))
@@ -12,6 +34,8 @@ def is_command(command_tuple, command_string):
 
 
 def verify_movie_id(arg):
+    if arg == "cancel":
+        return False
     try:
         query = "Select id from movies"
         ids = []
@@ -23,12 +47,21 @@ def verify_movie_id(arg):
         return False
 
 
-def get_projections_by_id(command):
+def get_projections_by_projection_id(projection_id):
     try:
-        if len(command) < 2:
-            return ("No movie id !")
-        movie_id = command[1]
-        query = """select 100-count(r.id) as free_spaces, m.name, p.date, p.time
+        pass
+
+    except Exception as e:
+        print(e)
+        return False
+
+
+def get_projections_by_movie_id(movie_id):
+    try:
+        # if len(command) < 2:
+        #    return ("No movie id !")
+        #movie_id = command
+        query = """select p.id, 100-count(r.id) as free_spaces, m.name, p.date, p.time
                     from projections as p left join reservations as r
                     on r.projection_id = p.id
                     join movies as m on p.movie_id = m.id
@@ -38,8 +71,9 @@ def get_projections_by_id(command):
             return "No such movie !"
         output = cursor.execute(query, (movie_id,)).fetchall()
         for x in output:
-            count, name, date, time = x
-            print("{} - {}, {}, {} free spaces".format(name, date, time, count))
+            p_id, count, name, date, time = x
+            print(
+                "({}) {} - {}, {}, {} free spaces".format(p_id, name, date, time, count))
         return True
     except Exception as e:
         print(e)
@@ -58,16 +92,17 @@ def show_movies_func():
         return False
 
 
-def show_movie_projections(args):
-    return args[1]
-
 while True:
     command = parse_command(input("Enter command--> "))
 
     if is_command(command, "show_movies"):
         show_movies_func()
     if is_command(command, "smp"):
-        print(get_projections_by_id(command))
+        if len(command) > 1:
+            print(get_projections_by_movie_id(command[1]))
+        continue
+    if is_command(command, "mr"):
+        make_reservation()
     if is_command(command, "exit"):
         conn.close()
         break
