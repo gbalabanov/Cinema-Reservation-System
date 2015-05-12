@@ -2,15 +2,34 @@ import sqlite3
 conn = sqlite3.connect("Cinema.db")
 cursor = conn.cursor()
 
-room_seats = [["." for x in range(10)] for y in range(10)]
-
 
 def print_room_seats(room):
     for row in room:
-        print("".join(row))
+        print(" | ".join(row))
+
+
+def get_projection_seats_as_tuples(proj_id):
+    query = """  Select r.row, r.col
+                From reservations as r
+                join projections as p
+                on r.projection_id = p.id
+                where p.id = ?"""
+    seats = cursor.execute(query, (proj_id, )).fetchall()
+    return seats
+
+
+def get_free_seats_for_projection(proj_id):
+    query = """Select 100 - count(r.id)
+                from projections as p
+                left join reservations as r on p.id = r.projection_id
+                where p.id = ?"""
+    output = cursor.execute(query, (proj_id,)).fetchone()
+    return output[0]
 
 
 def make_reservation():
+    room_seats = [["." for x in range(10)] for y in range(10)]
+    user_seats = []
     try:
         name = input("Enter name-->")
         number_tickets = int(input("Enter number of tickets-->"))
@@ -19,6 +38,23 @@ def make_reservation():
         while not (movie_id == "cancel" or verify_movie_id(movie_id)):
             movie_id = input("Enter correct id--> ")
         get_projections_by_movie_id(movie_id)
+        proj_id = input("Choose a projection--> ")
+        if number_tickets > get_free_seats_for_projection(proj_id):
+            print(
+                "There are no {} free seats for that projection !".format(number_tickets))
+            return False
+        for seat in get_projection_seats_as_tuples(proj_id):
+            room_seats[seat[0] - 1][seat[1] - 1] = "X"
+        print_room_seats(room_seats)
+        for x in range(number_tickets):
+            seat = eval(input("Enter seat--> "))
+            row, col = seat
+            while seat in get_projection_seats_as_tuples(proj_id) or (row > 10 or col > 10) or seat in user_seats:
+                print("Invalid seat !")
+                seat = eval(input("Enter another seat--> "))
+                row, col = seat
+            user_seats.append(seat)
+
 
     except Exception as e:
         print(e)
@@ -100,7 +136,6 @@ while True:
     if is_command(command, "smp"):
         if len(command) > 1:
             print(get_projections_by_movie_id(command[1]))
-        continue
     if is_command(command, "mr"):
         make_reservation()
     if is_command(command, "exit"):
